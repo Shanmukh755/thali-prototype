@@ -1,5 +1,59 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { KDS_TICKETS } from "../data/mockData";
+import {
+  Bike,
+  Clock,
+  Users,
+  ChefHat,
+  CheckCircle,
+  RotateCcw,
+  Zap,
+  AlertTriangle,
+  Package,
+} from "lucide-react";
+
+// ─── Station config ───
+const STATIONS = [
+  { id: "all", label: "All Stations" },
+  { id: "grill", label: "Grill" },
+  { id: "curry", label: "Curry" },
+  { id: "tandoor", label: "Tandoor" },
+  { id: "rice", label: "Rice" },
+  { id: "south", label: "South" },
+  { id: "cold", label: "Cold" },
+];
+
+// ─── Platform colors ───
+const PLATFORM_COLOR = {
+  Zomato: "bg-[#E23744] text-white",
+  Swiggy: "bg-[#FC8019] text-white",
+  ONDC: "bg-[#27AE60] text-white",
+  default: "bg-[#5DADE2] text-white",
+};
+
+// ─── Timer urgency ───
+function getUrgency(elapsed, expected) {
+  const pct = elapsed / expected;
+  if (pct >= 1) return "red";
+  if (pct >= 0.75) return "yellow";
+  return "green";
+}
+
+const URGENCY_BORDER = {
+  green: "border-[#27AE60]",
+  yellow: "border-[#F0C040]",
+  red: "border-[#E74C3C]",
+};
+const URGENCY_TIMER = {
+  green: "text-[#27AE60]",
+  yellow: "text-[#F0C040]",
+  red: "text-[#E74C3C]",
+};
+const URGENCY_HEADER = {
+  green: "bg-[#1A2A1A]",
+  yellow: "bg-[#2A2200]",
+  red: "bg-[#2A0A0A]",
+};
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
@@ -7,210 +61,163 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function getTimerClass(elapsed, expected) {
-  const pct = elapsed / expected;
-  if (pct >= 1) return "red";
-  if (pct >= 0.75) return "yellow";
-  return "green";
-}
-
-function KDSTicket({ ticket, onAction }) {
+// ─── Single KDS ticket card ───
+function KDSTicket({ ticket, onAction, isExiting }) {
   const [elapsed, setElapsed] = useState(ticket.startTime);
-  const timerClass = getTimerClass(elapsed, ticket.expectedTime);
+  const urgency = getUrgency(elapsed, ticket.expectedTime);
 
   useEffect(() => {
-    if (ticket.status === "done") return;
+    if (ticket.status === "ready" || ticket.status === "done") return;
     const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(interval);
   }, [ticket.status]);
 
+  const platColor = ticket.platform
+    ? PLATFORM_COLOR[ticket.platform] || PLATFORM_COLOR.default
+    : "bg-[#5DADE2] text-white";
+
   return (
     <div
-      className={`kds-ticket ${timerClass}`}
-      style={{ minWidth: "220px", flex: "0 0 auto" }}
+      className={[
+        "rounded-xl border-2 flex flex-col overflow-hidden transition-all duration-400 w-[230px] flex-shrink-0",
+        URGENCY_BORDER[urgency],
+        isExiting ? "opacity-0 scale-95" : "opacity-100 scale-100",
+      ].join(" ")}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "10px",
-        }}
-      >
-        <div>
-          <div style={{ color: "white", fontWeight: 700, fontSize: "14px" }}>
-            {ticket.table || ticket.brand || "Order"}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "6px",
-              marginTop: "3px",
-              flexWrap: "wrap",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "10px",
-                fontWeight: 600,
-                padding: "2px 6px",
-                borderRadius: "4px",
-                background:
-                  ticket.type === "dine-in"
-                    ? "#5DADE2"
-                    : ticket.platform === "Zomato"
-                      ? "#E23744"
-                      : ticket.platform === "Swiggy"
-                        ? "#FC8019"
-                        : "#27AE60",
-                color: "white",
-              }}
-            >
-              {ticket.type === "dine-in"
-                ? "DINE-IN"
-                : ticket.platform || "ONDC"}
-            </span>
-            {ticket.covers && (
-              <span style={{ fontSize: "10px", color: "#888" }}>
-                {ticket.covers} covers
-              </span>
+      {/* ── Ticket header ── */}
+      <div className={`px-3 py-2 ${URGENCY_HEADER[urgency]}`}>
+        <div className="flex items-start justify-between">
+          <div className="min-w-0">
+            {/* KOT ID */}
+            <p className="text-[10px] text-[#666] font-mono mb-[2px]">
+              {ticket.id}
+            </p>
+            {/* Table or brand */}
+            <p className="text-white font-bold text-[14px] leading-tight truncate">
+              {ticket.table || ticket.brand || "Order"}
+            </p>
+            {/* Waiter */}
+            {ticket.waiter && (
+              <p className="text-[10px] text-[#888] mt-[1px]">
+                👤 {ticket.waiter}
+              </p>
             )}
           </div>
+          {/* Timer */}
+          <div
+            className={`text-[22px] font-bold font-mono tabular-nums flex-shrink-0 ${URGENCY_TIMER[urgency]}`}
+          >
+            {formatTime(elapsed)}
+          </div>
         </div>
-        <div className={`kds-timer ${timerClass}`}>{formatTime(elapsed)}</div>
+
+        {/* Tags row */}
+        <div className="flex items-center gap-[5px] mt-2 flex-wrap">
+          <span
+            className={`text-[9px] font-bold px-[6px] py-[2px] rounded ${platColor}`}
+          >
+            {ticket.type === "dine-in" ? "DINE-IN" : ticket.platform || "ONDC"}
+          </span>
+          {ticket.covers && (
+            <span className="flex items-center gap-[3px] text-[9px] text-[#888]">
+              <Users size={9} />
+              {ticket.covers}
+            </span>
+          )}
+          {ticket.priority === "urgent" && (
+            <span className="flex items-center gap-[3px] text-[9px] font-bold text-[#E74C3C] bg-[#2A0A0A] px-[5px] py-[1px] rounded">
+              <AlertTriangle size={9} /> URGENT
+            </span>
+          )}
+          {ticket.priority === "high" && (
+            <span className="flex items-center gap-[3px] text-[9px] font-bold text-[#F0C040] bg-[#2A2200] px-[5px] py-[1px] rounded">
+              <Zap size={9} /> HIGH
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Delivery ETA */}
+      {/* ── Delivery ETA ── */}
       {ticket.deliveryEta && (
-        <div
-          style={{
-            background: "rgba(255,255,255,0.1)",
-            borderRadius: "6px",
-            padding: "6px 8px",
-            marginBottom: "10px",
-            fontSize: "11px",
-            color: "#ccc",
-          }}
-        >
-          🛵 Delivery partner:{" "}
-          <strong style={{ color: "white" }}>{ticket.deliveryEta} away</strong>
+        <div className="flex items-center gap-2 px-3 py-[6px] bg-[#1A1A1A] border-b border-[#2A2A2A]">
+          <Bike size={11} className="text-[#F0C040] flex-shrink-0" />
+          <span className="text-[11px] text-[#ccc]">
+            Partner:{" "}
+            <span className="text-white font-semibold">
+              {ticket.deliveryEta} away
+            </span>
+          </span>
         </div>
       )}
 
-      {/* Items */}
-      <div style={{ marginBottom: "12px" }}>
+      {/* ── Items ── */}
+      <div className="flex-1 px-3 py-2 bg-[#1A1A1A] space-y-[6px]">
         {ticket.items.map((item, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "5px",
-            }}
-          >
-            <span style={{ color: "#E0E0E0", fontSize: "13px" }}>
-              • {item.name}
-            </span>
-            <span style={{ color: "white", fontWeight: 600, fontSize: "13px" }}>
+          <div key={i} className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-[6px]">
+                <span className="text-[#E0E0E0] text-[13px] leading-tight">
+                  {item.name}
+                </span>
+                {item.note && (
+                  <span className="text-[9px] text-[#F0C040] bg-[#2A2200] px-[4px] py-[1px] rounded flex-shrink-0">
+                    {item.note}
+                  </span>
+                )}
+              </div>
+              <span className="text-[9px] text-[#555] capitalize">
+                {item.station}
+              </span>
+            </div>
+            <span className="text-white font-bold text-[13px] flex-shrink-0">
               ×{item.qty}
             </span>
           </div>
         ))}
       </div>
 
-      {/* Packaging */}
+      {/* ── Packaging ── */}
       {ticket.packaging && (
-        <div
-          style={{
-            fontSize: "11px",
-            color: "#888",
-            marginBottom: "10px",
-            fontStyle: "italic",
-          }}
-        >
-          📦 {ticket.packaging}
+        <div className="flex items-center gap-2 px-3 py-[5px] bg-[#111] border-t border-[#2A2A2A]">
+          <Package size={10} className="text-[#666]" />
+          <span className="text-[10px] text-[#666] italic">
+            {ticket.packaging}
+          </span>
         </div>
       )}
 
-      {/* Actions */}
-      <div style={{ display: "flex", gap: "6px" }}>
+      {/* ── Action buttons ── */}
+      <div className="flex gap-[5px] px-3 py-2 bg-[#111] border-t border-[#2A2A2A]">
         {ticket.status === "new" && (
-          <button
-            onClick={() => onAction(ticket.id, "start")}
-            style={{
-              flex: 1,
-              padding: "7px",
-              borderRadius: "6px",
-              border: "none",
-              background: "#27AE60",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "11px",
-              cursor: "pointer",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            START
-          </button>
-        )}
-        {ticket.status === "cooking" && (
           <>
             <button
+              onClick={() => onAction(ticket.id, "cooking")}
+              className="flex-1 py-[7px] rounded-lg bg-[#27AE60] text-white text-[11px] font-bold hover:bg-[#1E8449] transition-colors"
+            >
+              START
+            </button>
+            <button
               onClick={() => onAction(ticket.id, "ready")}
-              style={{
-                flex: 1,
-                padding: "7px",
-                borderRadius: "6px",
-                border: "none",
-                background: "#F0C040",
-                color: "#1A1A1A",
-                fontWeight: 600,
-                fontSize: "11px",
-                cursor: "pointer",
-                fontFamily: "Poppins, sans-serif",
-              }}
+              className="flex-1 py-[7px] rounded-lg border border-[#444] text-[#888] text-[11px] font-bold hover:border-[#F0C040] hover:text-[#F0C040] transition-colors"
             >
               READY
             </button>
           </>
         )}
+        {ticket.status === "cooking" && (
+          <button
+            onClick={() => onAction(ticket.id, "ready")}
+            className="flex-1 py-[7px] rounded-lg bg-[#F0C040] text-[#1A1A1A] text-[11px] font-bold hover:bg-[#D4A800] transition-colors"
+          >
+            MARK READY
+          </button>
+        )}
         {(ticket.status === "ready" || ticket.status === "overdue") && (
           <button
             onClick={() => onAction(ticket.id, "done")}
-            style={{
-              flex: 1,
-              padding: "7px",
-              borderRadius: "6px",
-              border: "none",
-              background: "#CC3333",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "11px",
-              cursor: "pointer",
-              fontFamily: "Poppins, sans-serif",
-            }}
+            className="flex-1 py-[7px] rounded-lg bg-[#CC3333] text-white text-[11px] font-bold hover:bg-[#A93226] transition-colors"
           >
             BUMP ✓
-          </button>
-        )}
-        {ticket.status === "new" && (
-          <button
-            onClick={() => onAction(ticket.id, "ready")}
-            style={{
-              flex: 1,
-              padding: "7px",
-              borderRadius: "6px",
-              border: "1px solid #555",
-              background: "transparent",
-              color: "#ccc",
-              fontWeight: 600,
-              fontSize: "11px",
-              cursor: "pointer",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            READY
           </button>
         )}
       </div>
@@ -218,143 +225,187 @@ function KDSTicket({ ticket, onAction }) {
   );
 }
 
+// ─── Station performance bar ───
+function StationBar({ tickets }) {
+  const stationCounts = {};
+  tickets.forEach((t) => {
+    t.items.forEach((i) => {
+      stationCounts[i.station] = (stationCounts[i.station] || 0) + i.qty;
+    });
+  });
+
+  const entries = Object.entries(stationCounts).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) return null;
+  const max = entries[0][1];
+
+  return (
+    <div className="flex items-end gap-3 h-[48px]">
+      {entries.map(([station, count]) => (
+        <div key={station} className="flex flex-col items-center gap-1">
+          <span className="text-[9px] text-[#666] font-semibold">{count}</span>
+          <div
+            className="w-[28px] rounded-t bg-[#CC3333] opacity-70"
+            style={{ height: `${Math.max(8, (count / max) * 32)}px` }}
+          />
+          <span className="text-[8px] text-[#555] capitalize">{station}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Completed ticket flash ───
+function CompletedFlash({ count }) {
+  if (count === 0) return null;
+  return (
+    <div className="flex items-center gap-2 bg-[#0A2A0A] border border-[#27AE60]/30 rounded-lg px-3 py-2">
+      <CheckCircle size={14} className="text-[#27AE60]" />
+      <span className="text-[11px] text-[#27AE60] font-semibold">
+        {count} completed today
+      </span>
+    </div>
+  );
+}
+
+// ─── Main Kitchen page ───
 export default function Kitchen() {
   const [tickets, setTickets] = useState(KDS_TICKETS);
   const [station, setStation] = useState("all");
-  const [doneTickets, setDoneTickets] = useState([]);
+  const [exitingIds, setExitingIds] = useState([]);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [view, setView] = useState("grid"); // grid | list
 
   const handleAction = (id, action) => {
     if (action === "done") {
-      setDoneTickets((prev) => [...prev, id]);
+      // Animate out then remove
+      setExitingIds((prev) => [...prev, id]);
       setTimeout(() => {
         setTickets((prev) => prev.filter((t) => t.id !== id));
-        setDoneTickets((prev) => prev.filter((d) => d !== id));
-      }, 800);
-    } else if (action === "start") {
+        setExitingIds((prev) => prev.filter((d) => d !== id));
+        setCompletedCount((n) => n + 1);
+      }, 400);
+    } else {
       setTickets((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: "cooking" } : t)),
-      );
-    } else if (action === "ready") {
-      setTickets((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: "ready" } : t)),
+        prev.map((t) => (t.id === id ? { ...t, status: action } : t)),
       );
     }
   };
 
-  const filteredTickets =
+  const handleReset = () => {
+    setTickets(KDS_TICKETS);
+    setCompletedCount(0);
+  };
+
+  const filtered =
     station === "all"
       ? tickets
       : tickets.filter((t) => t.items.some((i) => i.station === station));
 
+  const stats = {
+    queue: filtered.length,
+    new: filtered.filter((t) => t.status === "new").length,
+    cooking: filtered.filter((t) => t.status === "cooking").length,
+    ready: filtered.filter((t) => t.status === "ready").length,
+    overdue: filtered.filter((t) => t.status === "overdue").length,
+  };
+
+  const now = new Date().toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
-    <div
-      style={{
-        background: "#111111",
-        minHeight: "100vh",
-        padding: "20px",
-        margin: "-24px",
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "20px",
-        }}
-      >
-        <div>
-          <div style={{ color: "white", fontSize: "20px", fontWeight: 700 }}>
-            Kitchen Display
+    <div className="flex flex-col h-full bg-[#111111] -m-6 p-5 font-sans">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        {/* Left — title + time */}
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#CC3333] flex items-center justify-center flex-shrink-0">
+            <ChefHat size={18} color="white" />
           </div>
-          <div style={{ color: "#888", fontSize: "12px", marginTop: "2px" }}>
-            {filteredTickets.length} active orders ·{" "}
-            {new Date().toLocaleTimeString("en-IN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+          <div>
+            <p className="text-white text-[18px] font-bold leading-tight">
+              Kitchen Display
+            </p>
+            <p className="text-[#666] text-[11px]">
+              {filtered.length} active · {now}
+            </p>
           </div>
         </div>
 
-        {/* Station Filter */}
-        <div style={{ display: "flex", gap: "6px" }}>
-          {["all", "grill", "curry", "tandoor", "rice", "south", "cold"].map(
-            (s) => (
-              <button
-                key={s}
-                onClick={() => setStation(s)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  border: "none",
-                  cursor: "pointer",
-                  background: station === s ? "#CC3333" : "#2A2A2A",
-                  color: station === s ? "white" : "#888",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  textTransform: "capitalize",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {s === "all" ? "All Stations" : s}
-              </button>
-            ),
-          )}
+        {/* Center — station filter */}
+        <div className="flex gap-[5px] flex-wrap justify-center">
+          {STATIONS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setStation(s.id)}
+              className={[
+                "px-3 py-[5px] rounded-lg text-[11px] font-bold transition-all",
+                station === s.id
+                  ? "bg-[#CC3333] text-white"
+                  : "bg-[#2A2A2A] text-[#888] hover:text-[#ccc]",
+              ].join(" ")}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
 
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "16px" }}>
+        {/* Right — stats + reset */}
+        <div className="flex items-center gap-4">
           {[
-            { label: "Queue", value: filteredTickets.length, color: "#5DADE2" },
-            { label: "Avg Prep", value: "8.4m", color: "#27AE60" },
-            {
-              label: "Delayed",
-              value: filteredTickets.filter((t) => t.status === "overdue")
-                .length,
-              color: "#E74C3C",
-            },
+            { label: "Queue", value: stats.queue, color: "text-[#5DADE2]" },
+            { label: "Cooking", value: stats.cooking, color: "text-[#F0C040]" },
+            { label: "Ready", value: stats.ready, color: "text-[#27AE60]" },
+            { label: "Overdue", value: stats.overdue, color: "text-[#E74C3C]" },
           ].map((s) => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div
-                style={{ fontSize: "22px", fontWeight: 700, color: s.color }}
-              >
+            <div key={s.label} className="text-center">
+              <p className={`text-[20px] font-bold leading-tight ${s.color}`}>
                 {s.value}
-              </div>
-              <div style={{ fontSize: "10px", color: "#666" }}>{s.label}</div>
+              </p>
+              <p className="text-[9px] text-[#555] uppercase tracking-wide">
+                {s.label}
+              </p>
             </div>
           ))}
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-1 text-[10px] text-[#555] hover:text-[#888] transition-colors ml-2"
+            title="Reset demo"
+          >
+            <RotateCcw size={12} /> Reset
+          </button>
         </div>
       </div>
 
-      {/* Tickets */}
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-        {filteredTickets.map((ticket) => (
-          <div
-            key={ticket.id}
-            style={{
-              opacity: doneTickets.includes(ticket.id) ? 0 : 1,
-              transform: doneTickets.includes(ticket.id)
-                ? "scale(0.95)"
-                : "scale(1)",
-              transition: "all 0.4s ease",
-            }}
-          >
-            <KDSTicket ticket={ticket} onAction={handleAction} />
+      {/* ── Station load bar + completed flash ── */}
+      <div className="flex items-end justify-between mb-4 flex-shrink-0">
+        <StationBar tickets={filtered} />
+        <CompletedFlash count={completedCount} />
+      </div>
+
+      {/* ── Ticket grid ── */}
+      <div className="flex-1 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center py-16">
+            <CheckCircle size={48} className="text-[#27AE60] opacity-30 mb-4" />
+            <p className="text-[#444] text-[16px] font-semibold">All clear!</p>
+            <p className="text-[#333] text-[12px] mt-1">
+              {station === "all"
+                ? "No active orders"
+                : `No orders for ${station} station`}
+            </p>
           </div>
-        ))}
-        {filteredTickets.length === 0 && (
-          <div
-            style={{
-              color: "#444",
-              fontSize: "16px",
-              textAlign: "center",
-              width: "100%",
-              padding: "60px 0",
-            }}
-          >
-            ✅ All orders completed for this station
+        ) : (
+          <div className="flex flex-wrap gap-3 content-start">
+            {filtered.map((ticket) => (
+              <KDSTicket
+                key={ticket.id}
+                ticket={ticket}
+                onAction={handleAction}
+                isExiting={exitingIds.includes(ticket.id)}
+              />
+            ))}
           </div>
         )}
       </div>

@@ -20,7 +20,7 @@ import {
   ChevronRight,
   Store,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
   {
@@ -131,18 +131,45 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ collapsed }) {
   const location = useLocation();
-  const [openSections, setOpenSections] = useState({
-    "POS / Billing": false,
-    Orders: false,
-    Inventory: false,
-    "Customers (CRM)": false,
-    Reports: false,
-  });
+
+  // ── Determine which sections should be open based on current path ──
+  const getSectionsOpen = (pathname) => {
+    const open = {
+      "POS / Billing": false,
+      Orders: false,
+      Inventory: false,
+      "Customers (CRM)": false,
+      Reports: false,
+    };
+    if (pathname.startsWith("/pos")) open["POS / Billing"] = true;
+    if (pathname.startsWith("/orders")) open["Orders"] = true;
+    if (pathname.startsWith("/inventory")) open["Inventory"] = true;
+    if (pathname.startsWith("/customers")) open["Customers (CRM)"] = true;
+    if (pathname.startsWith("/reports")) open["Reports"] = true;
+    return open;
+  };
+
+  const [openSections, setOpenSections] = useState(() =>
+    getSectionsOpen(location.pathname),
+  );
+
+  // Keep sections in sync when route changes (e.g. sidebar click)
+  useEffect(() => {
+    setOpenSections((prev) => {
+      const auto = getSectionsOpen(location.pathname);
+      // Merge: auto-open the matching section, keep others as they were
+      return {
+        ...prev,
+        ...Object.fromEntries(Object.entries(auto).filter(([, v]) => v)),
+      };
+    });
+  }, [location.pathname]);
 
   const toggleSection = (label) => {
     setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
+  // A path is "active" if it exactly matches or is a sub-path
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 

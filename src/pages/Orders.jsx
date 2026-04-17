@@ -1,181 +1,86 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import {
+  ClipboardList,
+  UtensilsCrossed,
+  Globe,
+  MessageSquare,
+} from "lucide-react";
 import { ORDERS } from "../data/mockData";
 
-const STATUS_CONFIG = {
-  served: { label: "Served", class: "green" },
-  cooking: { label: "Cooking", class: "orange" },
-  delivered: { label: "Delivered", class: "blue" },
-  running: { label: "Running", class: "orange" },
-  billed: { label: "Billed", class: "green" },
-  ready: { label: "Ready", class: "green" },
-};
+const TABS = [
+  { label: "All Orders", icon: ClipboardList, path: "/orders" },
+  { label: "Dine-in", icon: UtensilsCrossed, path: "/orders/dine-in" },
+  { label: "Online Orders", icon: Globe, path: "/orders/online" },
+  { label: "Direct Orders", icon: MessageSquare, path: "/orders/direct" },
+];
+
+function tabTitle(pathname) {
+  if (pathname.includes("dine-in")) return "Dine-in Orders";
+  if (pathname.includes("online")) return "Online Orders";
+  if (pathname.includes("direct")) return "Direct Orders";
+  return "All Orders";
+}
 
 export default function Orders() {
-  const [activeTab, setActiveTab] = useState("all");
-  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname;
 
-  const tabs = [
-    { id: "all", label: "All Orders" },
-    { id: "dine-in", label: "Dine-in" },
-    { id: "zomato", label: "Zomato" },
-    { id: "swiggy", label: "Swiggy" },
-    { id: "ondc", label: "ONDC" },
-    { id: "direct", label: "Direct" },
-    { id: "takeaway", label: "Takeaway" },
-  ];
+  const isActive = (tabPath) => {
+    if (tabPath === "/orders") return pathname === "/orders";
+    return pathname.startsWith(tabPath);
+  };
 
-  const filtered = ORDERS.filter(
-    (o) =>
-      (activeTab === "all" || o.channel === activeTab) &&
-      (o.id.toLowerCase().includes(search.toLowerCase()) ||
-        o.items.toLowerCase().includes(search.toLowerCase())),
-  );
-
-  const channelIcon = (channel) => {
-    const icons = {
-      "dine-in": "🍽️",
-      zomato: "🔴",
-      swiggy: "🟠",
-      ondc: "🟢",
-      direct: "💬",
-      takeaway: "🥡",
-    };
-    return icons[channel] || "📦";
+  const counts = {
+    "/orders": ORDERS.length,
+    "/orders/dine-in": ORDERS.filter((o) => o.channel === "dine-in").length,
+    "/orders/online": ORDERS.filter((o) =>
+      ["zomato", "swiggy", "ondc"].includes(o.channel),
+    ).length,
+    "/orders/direct": ORDERS.filter((o) => o.channel === "direct").length,
   };
 
   return (
-    <div className="fade-in">
-      <div className="page-header">
-        <div>
-          <div className="page-title">Orders</div>
-          <div className="page-subtitle">
-            Today · {ORDERS.length} orders shown
-          </div>
-        </div>
-        <div className="search-wrapper">
-          <Search size={14} />
-          <input
-            className="search-input"
-            placeholder="Search orders..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: "12px",
-          marginBottom: "20px",
-        }}
-      >
-        {[
-          { label: "Total Today", value: "187", color: "#1A1A1A" },
-          { label: "Dine-in", value: "134", color: "#5DADE2" },
-          { label: "Zomato", value: "38", color: "#E23744" },
-          { label: "Swiggy", value: "15", color: "#FC8019" },
-          { label: "Direct/ONDC", value: "12", color: "#27AE60" },
-        ].map((s) => (
-          <div key={s.label} className="stat-card" style={{ padding: "14px" }}>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: s.color }}>
-              {s.value}
-            </div>
-            <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
-              {s.label}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="tab-bar" style={{ marginBottom: "16px" }}>
-        {tabs.map((t) => (
-          <div
-            key={t.id}
-            className={`tab-item ${activeTab === t.id ? "active" : ""}`}
-            onClick={() => setActiveTab(t.id)}
-          >
-            {t.label}
-          </div>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div className="card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Order #</th>
-              <th>Time</th>
-              <th>Channel</th>
-              <th>Items</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((order) => {
-              const status = STATUS_CONFIG[order.status] || {
-                label: order.status,
-                class: "gray",
-              };
+    <div className="fade-in flex flex-col h-full">
+      {/* ── Shared top bar ── */}
+      <div className="flex items-center justify-between mb-3 bg-white px-4 py-[10px] rounded-lg border border-[#EEEEEE] flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <span className="text-lg font-semibold text-text-primary">
+            {tabTitle(pathname)}
+          </span>
+          <div className="flex gap-[5px]">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = isActive(tab.path);
+              const count = counts[tab.path];
               return (
-                <tr key={order.id}>
-                  <td style={{ fontWeight: 700, color: "#CC3333" }}>
-                    {order.id}
-                  </td>
-                  <td style={{ color: "#888" }}>{order.time}</td>
-                  <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span>{channelIcon(order.channel)}</span>
-                      <span style={{ fontSize: "12px", fontWeight: 500 }}>
-                        {order.table || order.platform || order.type}
-                      </span>
-                    </div>
-                  </td>
-                  <td
-                    style={{
-                      maxWidth: "200px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      color: "#555",
-                    }}
+                <button
+                  key={tab.path}
+                  onClick={() => navigate(tab.path)}
+                  className={[
+                    "flex items-center gap-[6px] px-3 py-[5px] rounded-md text-xs font-semibold transition-all",
+                    active
+                      ? "bg-primary text-white"
+                      : "bg-transparent text-[#555] border border-[#E0E0E0] hover:bg-surface",
+                  ].join(" ")}
+                >
+                  <Icon size={13} />
+                  {tab.label}
+                  <span
+                    className={`text-[10px] font-bold rounded-full px-[5px] py-[1px] ${active ? "bg-white/20 text-white" : "bg-[#F0F0F0] text-text-muted"}`}
                   >
-                    {order.items}
-                  </td>
-                  <td style={{ fontWeight: 600 }}>
-                    ₹{order.amount.toLocaleString("en-IN")}
-                  </td>
-                  <td>
-                    <span className={`status-pill ${status.class}`}>
-                      {status.label}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="btn-ghost"
-                      style={{ padding: "4px 8px", fontSize: "11px" }}
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
+                    {count}
+                  </span>
+                </button>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Child route renders here ── */}
+      <div className="flex-1 overflow-hidden">
+        <Outlet />
       </div>
     </div>
   );

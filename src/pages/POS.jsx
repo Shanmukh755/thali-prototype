@@ -1,71 +1,75 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import TableView from "./pos/TableView";
-import QuickBill from "./pos/QuickBill";
-import DeliveryOrders from "./pos/DeliveryOrders";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { LayoutGrid, Truck, ShoppingBag, RefreshCw } from "lucide-react";
 
+// ─── Tab definitions — path drives everything ───
 const TABS = [
-  { id: "table", label: "🍽️ Table View", path: "/pos" },
-  { id: "quick", label: "⚡ Quick Bill", path: "/pos/quick" },
-  { id: "delivery", label: "🛵 Delivery Orders", path: "/pos/delivery" },
+  { label: "Dine-in", icon: LayoutGrid, path: "/pos" },
+  { label: "Delivery", icon: Truck, path: "/pos/delivery" },
+  { label: "Takeaway", icon: ShoppingBag, path: "/pos/quick" },
 ];
 
-export default function POS() {
-  const location = useLocation();
-  const navigate = useNavigate();
+function tabTitle(pathname) {
+  if (pathname.includes("delivery")) return "Delivery Orders";
+  if (pathname.includes("quick")) return "Quick Bill";
+  return "Table View";
+}
 
-  const activeTab =
-    location.pathname === "/pos/quick"
-      ? "quick"
-      : location.pathname === "/pos/delivery"
-        ? "delivery"
-        : "table";
+export default function POS() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname;
+
+  const isActive = (tabPath) => {
+    if (tabPath === "/pos") return pathname === "/pos";
+    return pathname.startsWith(tabPath);
+  };
 
   return (
-    <div
-      className="fade-in"
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
-    >
-      {/* POS Sub-Nav */}
-      <div
-        style={{
-          display: "flex",
-          gap: "4px",
-          marginBottom: "16px",
-          background: "white",
-          padding: "6px",
-          borderRadius: "12px",
-          border: "1px solid #EEEEEE",
-          width: "fit-content",
-        }}
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => navigate(tab.path)}
-            style={{
-              padding: "8px 18px",
-              borderRadius: "8px",
-              border: "none",
-              cursor: "pointer",
-              background: activeTab === tab.id ? "#CC3333" : "transparent",
-              color: activeTab === tab.id ? "white" : "#555555",
-              fontWeight: activeTab === tab.id ? 600 : 400,
-              fontSize: "13px",
-              fontFamily: "Poppins, sans-serif",
-              transition: "all 0.15s",
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className="fade-in flex flex-col h-full">
+      {/* ── Shared top bar ── */}
+      <div className="flex items-center justify-between mb-3 bg-white px-4 py-[10px] rounded-lg border border-[#EEEEEE] flex-shrink-0">
+        {/* Title + tabs */}
+        <div className="flex items-center gap-4">
+          <span className="text-lg font-semibold text-text-primary">
+            {tabTitle(pathname)}
+          </span>
+
+          <div className="flex gap-[6px]">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = isActive(tab.path);
+              return (
+                <button
+                  key={tab.path}
+                  onClick={() => navigate(tab.path)}
+                  className={[
+                    "flex items-center gap-[6px] px-3 py-[5px] rounded-md text-xs font-semibold transition-all",
+                    active
+                      ? "bg-primary text-white"
+                      : "bg-transparent text-[#555] border border-[#E0E0E0] hover:bg-surface",
+                  ].join(" ")}
+                >
+                  <Icon size={13} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Refresh */}
+        <button
+          className="btn-ghost py-[5px] px-[10px]"
+          onClick={() => navigate(pathname)}
+          title="Refresh"
+        >
+          <RefreshCw size={14} />
+        </button>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        {activeTab === "table" && <TableView />}
-        {activeTab === "quick" && <QuickBill />}
-        {activeTab === "delivery" && <DeliveryOrders />}
+      {/* ── Child route renders here ── */}
+      <div className="flex-1 overflow-hidden">
+        <Outlet />
       </div>
     </div>
   );

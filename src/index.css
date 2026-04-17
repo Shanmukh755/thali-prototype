@@ -1036,3 +1036,126 @@ body {
     padding: 16px;
   }
 }
+
+/* ─── Order notification slide-in ─── */
+@keyframes slideInRight {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ─── Theme CSS Variables (defaults = Classic Red) ─── */
+:root {
+  --primary: #cc3333;
+  --primary-dark: #a93226;
+  --primary-subtle: rgba(204, 51, 51, 0.06);
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #eeeeee;
+  --sidebar-text: #555555;
+  --sidebar-active-bg: rgba(204, 51, 51, 0.08);
+  --sidebar-active-text: #cc3333;
+  --sidebar-logo-bg: #cc3333;
+  --page-bg: #f8f8f8;
+  --surface: #f8f8f8;
+  --border: #e0e0e0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --text-muted: #999999;
+  --header-bg: #ffffff;
+  --header-border: #eeeeee;
+  --card-bg: #ffffff;
+}
+
+/* ─── Apply theme variables to layout elements ─── */
+.app-layout {
+  background: var(--page-bg);
+}
+.page-content {
+  background: var(--page-bg);
+}
+.sidebar {
+  background: var(--sidebar-bg);
+  border-right-color: var(--sidebar-border);
+}
+.sidebar-logo {
+  border-bottom-color: var(--sidebar-border);
+}
+.sidebar-logo-icon {
+  background: var(--sidebar-logo-bg);
+}
+.sidebar-logo-text {
+  color: var(--text-primary);
+}
+.nav-section-label {
+  color: var(--text-muted);
+}
+.nav-item {
+  color: var(--sidebar-text);
+}
+.nav-item:hover {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+}
+.nav-item.active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+}
+.nav-item.active::before {
+  background: var(--sidebar-active-text);
+}
+.nav-sub-item {
+  color: var(--sidebar-text);
+}
+.nav-sub-item:hover,
+.nav-sub-item.active {
+  color: var(--sidebar-active-text);
+}
+.app-header {
+  background: var(--header-bg);
+  border-bottom-color: var(--header-border);
+}
+.card {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+.stat-card {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+.btn-primary {
+  background: var(--primary);
+}
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+.btn-outline {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.btn-outline:hover {
+  background: var(--primary-subtle);
+}
+.tab-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.tab-item:hover {
+  color: var(--primary);
+}
+.search-input:focus {
+  border-color: var(--primary);
+}
+.form-input:focus {
+  border-color: var(--primary);
+}
+.toggle-switch.on {
+  background: var(--primary);
+}
+.sync-dot.synced {
+  background: #27ae60;
+}

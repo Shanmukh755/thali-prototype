@@ -3,15 +3,43 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
-import Kitchen from "./pages/Kitchen";
 import Orders from "./pages/Orders";
+import Kitchen from "./pages/Kitchen";
 import Inventory from "./pages/Inventory";
+import InventoryStock from "./pages/inventory/InventoryStock";
+import InventoryRecipes from "./pages/inventory/InventoryRecipes";
+import InventoryPurchaseOrders from "./pages/inventory/InventoryPurchaseOrders";
+import InventorySuppliers from "./pages/inventory/InventorySuppliers";
+import InventoryWaste from "./pages/inventory/InventoryWaste";
 import Reports from "./pages/Reports";
+import ReportsSales from "./pages/reports/ReportsSales";
+import ReportsMenu from "./pages/reports/ReportsMenu";
+import ReportsInventory from "./pages/reports/ReportsInventory";
+import ReportsReconciliation from "./pages/reports/ReportsReconciliation";
+import ReportsFinancial from "./pages/reports/ReportsFinancial";
 import Customers from "./pages/Customers";
+import CustomersAll from "./pages/customers/CustomersAll";
+import CustomersLoyalty from "./pages/customers/CustomersLoyalty";
+import CustomersFeedback from "./pages/customers/CustomersFeedback";
+import CustomersSegments from "./pages/customers/CustomersSegments";
 import Intelligence from "./pages/Intelligence";
 import CloudKitchen from "./pages/CloudKitchen";
 import Staff from "./pages/Staff";
 import Pricing from "./pages/Pricing";
+import TableViewPage from "./pages/pos/TableViewPage";
+import QuickBill from "./pages/pos/QuickBill";
+import DeliveryOrders from "./pages/pos/DeliveryOrders";
+import AllOrders from "./pages/orders/AllOrders";
+import DineInOrders from "./pages/orders/DineInOrders";
+import OnlineOrders from "./pages/orders/OnlineOrders";
+import DirectOrders from "./pages/orders/DirectOrders";
+import Reservations from "./pages/Reservations";
+import MenuManagement from "./pages/MenuManagement";
+import Marketing from "./pages/Marketing";
+import Payments from "./pages/Payments";
+import MultiBranch from "./pages/MultiBranch";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 
 // Placeholder for pages not yet built
 function ComingSoon({ title }) {
@@ -52,57 +80,57 @@ export default function App() {
         {/* App with Layout */}
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/pos" element={<POS />} />
-          <Route path="/pos/quick" element={<POS />} />
-          <Route path="/pos/delivery" element={<POS />} />
+          {/* POS — nested routes with Outlet */}
+          <Route path="/pos" element={<POS />}>
+            <Route index element={<TableViewPage />} />
+            <Route path="quick" element={<QuickBill />} />
+            <Route path="delivery" element={<DeliveryOrders />} />
+          </Route>
           <Route path="/kitchen" element={<Kitchen />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/orders/dine-in" element={<Orders />} />
-          <Route path="/orders/online" element={<Orders />} />
-          <Route path="/orders/direct" element={<Orders />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/inventory/recipes" element={<Inventory />} />
-          <Route
-            path="/inventory/purchase-orders"
-            element={<ComingSoon title="Purchase Orders" />}
-          />
-          <Route path="/inventory/suppliers" element={<Inventory />} />
-          <Route path="/inventory/waste" element={<Inventory />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/reports/menu" element={<Reports />} />
-          <Route path="/reports/inventory" element={<Reports />} />
-          <Route path="/reports/reconciliation" element={<Reports />} />
-          <Route path="/reports/financial" element={<Reports />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/customers/loyalty" element={<Customers />} />
-          <Route path="/customers/feedback" element={<Customers />} />
-          <Route path="/customers/segments" element={<Customers />} />
+          {/* Orders — nested routes with Outlet */}
+          <Route path="/orders" element={<Orders />}>
+            <Route index element={<AllOrders />} />
+            <Route path="dine-in" element={<DineInOrders />} />
+            <Route path="online" element={<OnlineOrders />} />
+            <Route path="direct" element={<DirectOrders />} />
+          </Route>
+          {/* Inventory — nested routes with Outlet */}
+          <Route path="/inventory" element={<Inventory />}>
+            <Route index element={<InventoryStock />} />
+            <Route path="recipes" element={<InventoryRecipes />} />
+            <Route
+              path="purchase-orders"
+              element={<InventoryPurchaseOrders />}
+            />
+            <Route path="suppliers" element={<InventorySuppliers />} />
+            <Route path="waste" element={<InventoryWaste />} />
+          </Route>
+          {/* Reports — nested routes with Outlet */}
+          <Route path="/reports" element={<Reports />}>
+            <Route index element={<ReportsSales />} />
+            <Route path="menu" element={<ReportsMenu />} />
+            <Route path="inventory" element={<ReportsInventory />} />
+            <Route path="reconciliation" element={<ReportsReconciliation />} />
+            <Route path="financial" element={<ReportsFinancial />} />
+          </Route>
+          {/* Customers — nested routes with Outlet */}
+          <Route path="/customers" element={<Customers />}>
+            <Route index element={<CustomersAll />} />
+            <Route path="loyalty" element={<CustomersLoyalty />} />
+            <Route path="feedback" element={<CustomersFeedback />} />
+            <Route path="segments" element={<CustomersSegments />} />
+          </Route>
           <Route path="/intelligence" element={<Intelligence />} />
           <Route path="/cloud-kitchen" element={<CloudKitchen />} />
           <Route path="/staff" element={<Staff />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route
-            path="/reservations"
-            element={<ComingSoon title="Reservations" />}
-          />
-          <Route
-            path="/menu"
-            element={<ComingSoon title="Menu Management" />}
-          />
-          <Route
-            path="/marketing"
-            element={<ComingSoon title="Marketing & Campaigns" />}
-          />
-          <Route
-            path="/payments"
-            element={<ComingSoon title="Payments & Settlements" />}
-          />
-          <Route
-            path="/branches"
-            element={<ComingSoon title="Multi-Branch Management" />}
-          />
-          <Route path="/settings" element={<ComingSoon title="Settings" />} />
-          <Route path="/help" element={<ComingSoon title="Help & Support" />} />
+          <Route path="/reservations" element={<Reservations />} />
+          <Route path="/menu" element={<MenuManagement />} />
+          <Route path="/marketing" element={<Marketing />} />
+          <Route path="/payments" element={<Payments />} />
+          <Route path="/branches" element={<MultiBranch />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/help" element={<Help />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,343 +1,299 @@
-import { Store, TrendingUp, TrendingDown } from "lucide-react";
+import { useState } from "react";
+import {
+  Store,
+  Pause,
+  Play,
+  RefreshCw,
+  TrendingUp,
+  Bike,
+  Package,
+} from "lucide-react";
 import { CLOUD_KITCHEN_BRANDS } from "../data/mockData";
 
-export default function CloudKitchen() {
-  const liveOrders = [
-    {
-      id: "CK-041",
-      brand: "Biryani Brothers",
-      platform: "Zomato",
-      item: "Chicken Biryani x2",
-      stage: "cooking",
-      eta: "12 mins",
-      color: "#E23744",
-    },
-    {
-      id: "CK-040",
-      brand: "Wrap & Roll",
-      platform: "Swiggy",
-      item: "Paneer Wrap x1",
-      stage: "packed",
-      eta: "5 mins",
-      color: "#FC8019",
-    },
-    {
-      id: "CK-039",
-      brand: "South Spice",
-      platform: "ONDC",
-      item: "Masala Dosa x2",
-      stage: "received",
-      eta: "25 mins",
-      color: "#27AE60",
-    },
-    {
-      id: "CK-038",
-      brand: "Dessert Box",
-      platform: "Zomato",
-      item: "Gulab Jamun x4",
-      stage: "picked",
-      eta: "Picked up",
-      color: "#E23744",
-    },
-    {
-      id: "CK-037",
-      brand: "Biryani Brothers",
-      platform: "Swiggy",
-      item: "Mutton Biryani x1",
-      stage: "prep",
-      eta: "18 mins",
-      color: "#FC8019",
-    },
-  ];
+// ─── Live orders ───
+const LIVE_ORDERS = [
+  {
+    id: "CK-041",
+    brand: "Biryani Brothers",
+    platform: "Zomato",
+    items: "Chicken Biryani ×2, Raita ×2",
+    stage: "cooking",
+    eta: "12 mins",
+    partnerEta: "8 mins",
+  },
+  {
+    id: "CK-040",
+    brand: "Wrap & Roll",
+    platform: "Swiggy",
+    items: "Paneer Wrap ×1, Cold Coffee ×1",
+    stage: "packed",
+    eta: "5 mins",
+    partnerEta: "3 mins",
+  },
+  {
+    id: "CK-039",
+    brand: "South Spice",
+    platform: "ONDC",
+    items: "Masala Dosa ×2, Vada ×2",
+    stage: "received",
+    eta: "25 mins",
+    partnerEta: null,
+  },
+  {
+    id: "CK-038",
+    brand: "Dessert Box",
+    platform: "Zomato",
+    items: "Gulab Jamun ×4",
+    stage: "picked",
+    eta: "Picked",
+    partnerEta: null,
+  },
+  {
+    id: "CK-037",
+    brand: "Biryani Brothers",
+    platform: "Swiggy",
+    items: "Mutton Biryani ×1, Salan ×1",
+    stage: "prep",
+    eta: "18 mins",
+    partnerEta: null,
+  },
+  {
+    id: "CK-036",
+    brand: "South Spice",
+    platform: "ONDC",
+    items: "Filter Coffee ×3",
+    stage: "cooking",
+    eta: "8 mins",
+    partnerEta: "5 mins",
+  },
+];
 
-  const stages = ["received", "prep", "cooking", "packed", "picked"];
-  const stageLabels = {
-    received: "Received",
-    prep: "Prep Started",
-    cooking: "Cooking",
-    packed: "Packed",
-    picked: "Picked Up",
-  };
-  const stageColors = {
-    received: "#5DADE2",
-    prep: "#E67E22",
-    cooking: "#E67E22",
-    packed: "#27AE60",
-    picked: "#888",
-  };
+const STAGES = ["received", "prep", "cooking", "packed", "picked"];
+const STAGE_LABELS = {
+  received: "Received",
+  prep: "Prep",
+  cooking: "Cooking",
+  packed: "Packed",
+  picked: "Picked Up",
+};
 
+const PLATFORM_CFG = {
+  Zomato: { color: "#E23744", bg: "bg-[#FDE8EA]", text: "text-[#E23744]" },
+  Swiggy: { color: "#FC8019", bg: "bg-[#FEF0E6]", text: "text-[#FC8019]" },
+  ONDC: { color: "#27AE60", bg: "bg-[#E8F8F0]", text: "text-success" },
+};
+
+const BRAND_COLORS = {
+  "Biryani Brothers": "bg-[#FDE8EA] text-[#E23744]",
+  "Wrap & Roll": "bg-[#FEF0E6] text-[#FC8019]",
+  "South Spice": "bg-[#E8F8F0] text-success",
+  "Dessert Box": "bg-[#F3E5F5] text-[#9B59B6]",
+};
+
+// ─── Stage progress bar ───
+function StageBar({ stage }) {
+  const currentIdx = STAGES.indexOf(stage);
   return (
-    <div className="fade-in">
-      <div className="page-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div
-            style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              background: "#CC3333",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Store size={24} color="white" />
+    <div className="flex items-center gap-[3px]">
+      {STAGES.map((s, i) => {
+        const done = i <= currentIdx;
+        const current = i === currentIdx;
+        return (
+          <div key={s} className="flex items-center gap-[3px]">
+            <div
+              title={STAGE_LABELS[s]}
+              className={`w-[7px] h-[7px] rounded-full transition-all ${done ? (current ? "bg-primary scale-125" : "bg-success") : "bg-[#E0E0E0]"}`}
+            />
+            {i < STAGES.length - 1 && (
+              <div
+                className={`w-[12px] h-[1.5px] ${i < currentIdx ? "bg-success" : "bg-[#E0E0E0]"}`}
+              />
+            )}
           </div>
-          <div>
-            <div className="page-title">Cloud Kitchen Mode</div>
-            <div className="page-subtitle">
-              4 brands · All platforms unified
-            </div>
-          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Brand card ───
+function BrandCard({ brand, busyMode, onToggleBusy }) {
+  return (
+    <div className="bg-white rounded-xl border border-[#EEEEEE] p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className="text-[14px] font-bold text-text-primary">
+            {brand.name}
+          </p>
+          <p className="text-[10px] text-text-muted mt-[1px]">
+            {brand.platform}
+          </p>
         </div>
-        <span className="status-pill green">All Brands Online</span>
-      </div>
-
-      {/* Brand Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "16px",
-          marginBottom: "24px",
-        }}
-      >
-        {CLOUD_KITCHEN_BRANDS.map((brand) => (
-          <div key={brand.id} className="card">
-            <div style={{ padding: "16px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  marginBottom: "12px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "14px" }}>
-                    {brand.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "#888",
-                      marginTop: "2px",
-                    }}
-                  >
-                    {brand.platform}
-                  </div>
-                </div>
-                <span
-                  className="status-pill green"
-                  style={{ fontSize: "10px" }}
-                >
-                  Online
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    background: "#F8F8F8",
-                    borderRadius: "6px",
-                    padding: "8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: "#CC3333",
-                    }}
-                  >
-                    {brand.orders}
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#888" }}>Orders</div>
-                </div>
-                <div
-                  style={{
-                    background: "#F8F8F8",
-                    borderRadius: "6px",
-                    padding: "8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: "#27AE60",
-                    }}
-                  >
-                    {brand.margin}%
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#888" }}>Margin</div>
-                </div>
-              </div>
-              <div
-                style={{
-                  marginTop: "10px",
-                  padding: "8px",
-                  background: "#FFF5F5",
-                  borderRadius: "6px",
-                }}
-              >
-                <div style={{ fontSize: "11px", color: "#888" }}>
-                  Net Revenue
-                </div>
-                <div
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#CC3333",
-                  }}
-                >
-                  ₹{(brand.netRevenue / 1000).toFixed(0)}k
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Live Order Queue */}
-      <div className="card" style={{ marginBottom: "20px" }}>
-        <div className="card-header">
-          <div style={{ fontWeight: 600, fontSize: "14px" }}>
-            Live Order Queue
-          </div>
-          <span className="badge badge-orange">
-            {liveOrders.filter((o) => o.stage !== "picked").length} active
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[10px] font-semibold px-2 py-[2px] rounded-full ${busyMode ? "bg-[#FEF3E8] text-warning" : "bg-[#E8F8F0] text-success"}`}
+          >
+            {busyMode ? "⏸ Busy" : "🟢 Online"}
           </span>
         </div>
-        <div className="card-body" style={{ padding: "0" }}>
-          {liveOrders.map((order, i) => (
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="bg-surface rounded-lg p-2 text-center">
+          <p className="text-[16px] font-bold text-primary">{brand.orders}</p>
+          <p className="text-[9px] text-text-muted">Orders</p>
+        </div>
+        <div className="bg-surface rounded-lg p-2 text-center">
+          <p
+            className={`text-[16px] font-bold ${brand.margin > 60 ? "text-success" : "text-warning"}`}
+          >
+            {brand.margin}%
+          </p>
+          <p className="text-[9px] text-text-muted">Margin</p>
+        </div>
+      </div>
+
+      <div className="bg-[#FFF5F5] rounded-lg px-3 py-2 mb-3">
+        <p className="text-[10px] text-text-muted">Net Revenue (March)</p>
+        <p className="text-[15px] font-bold text-primary">
+          ₹{(brand.netRevenue / 1000).toFixed(0)}k
+        </p>
+      </div>
+
+      <button
+        onClick={() => onToggleBusy(brand.id)}
+        className={`w-full flex items-center justify-center gap-2 text-xs font-semibold py-[7px] rounded-lg border transition-all ${busyMode ? "bg-[#E8F8F0] text-success border-success hover:bg-[#D4F0E4]" : "bg-white text-warning border-warning hover:bg-[#FEF3E8]"}`}
+      >
+        {busyMode ? (
+          <>
+            <Play size={12} /> Resume Orders
+          </>
+        ) : (
+          <>
+            <Pause size={12} /> Pause Orders
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ─── Live order queue ───
+function LiveOrderQueue() {
+  const [orders, setOrders] = useState(LIVE_ORDERS);
+
+  const advance = (id) => {
+    setOrders((prev) =>
+      prev.map((o) => {
+        if (o.id !== id) return o;
+        const idx = STAGES.indexOf(o.stage);
+        return idx < STAGES.length - 1 ? { ...o, stage: STAGES[idx + 1] } : o;
+      }),
+    );
+  };
+
+  const active = orders.filter((o) => o.stage !== "picked").length;
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+        <p className="text-[13px] font-semibold text-text-primary">
+          {active} active orders across all brands
+        </p>
+        <span className="text-[10px] font-bold bg-warning text-white px-2 py-[2px] rounded-full">
+          {active} active
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto bg-white rounded-xl border border-[#EEEEEE]">
+        {orders.map((order, i) => {
+          const platCfg = PLATFORM_CFG[order.platform] || PLATFORM_CFG.ONDC;
+          const brandColor =
+            BRAND_COLORS[order.brand] || "bg-surface text-text-muted";
+          const isDone = order.stage === "picked";
+          return (
             <div
               key={order.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                padding: "12px 20px",
-                borderBottom:
-                  i < liveOrders.length - 1 ? "1px solid #F5F5F5" : "none",
-              }}
+              className={`flex items-center gap-4 px-5 py-3 border-b border-[#F5F5F5] last:border-b-0 ${isDone ? "opacity-50" : ""}`}
             >
-              {/* Brand + Platform */}
-              <div style={{ minWidth: "140px" }}>
-                <div style={{ fontWeight: 600, fontSize: "13px" }}>
-                  {order.brand}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    marginTop: "2px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: order.color,
-                    }}
-                  />
-                  <span style={{ fontSize: "11px", color: "#888" }}>
-                    {order.platform}
+              {/* Brand + platform */}
+              <div className="min-w-[160px]">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`text-[10px] font-bold px-2 py-[2px] rounded-full ${brandColor}`}
+                  >
+                    {order.brand}
                   </span>
                 </div>
+                <span
+                  className={`text-[10px] font-semibold px-2 py-[1px] rounded-full ${platCfg.bg} ${platCfg.text}`}
+                >
+                  {order.platform}
+                </span>
               </div>
 
               {/* Items */}
-              <div style={{ flex: 1, fontSize: "13px", color: "#555" }}>
-                {order.item}
-              </div>
+              <p className="flex-1 text-[12px] text-text-secondary truncate">
+                {order.items}
+              </p>
 
-              {/* Stage Tracker */}
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "4px" }}
-              >
-                {stages.map((stage, si) => {
-                  const currentIdx = stages.indexOf(order.stage);
-                  const isDone = si <= currentIdx;
-                  return (
-                    <div
-                      key={stage}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: isDone
-                            ? stageColors[order.stage]
-                            : "#E0E0E0",
-                          transition: "background 0.3s",
-                        }}
-                        title={stageLabels[stage]}
-                      />
-                      {si < stages.length - 1 && (
-                        <div
-                          style={{
-                            width: "16px",
-                            height: "2px",
-                            background:
-                              isDone && si < currentIdx
-                                ? stageColors[order.stage]
-                                : "#E0E0E0",
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Stage bar */}
+              <StageBar stage={order.stage} />
 
-              {/* Stage Label */}
+              {/* Stage label */}
               <span
-                className={`status-pill ${order.stage === "picked" ? "gray" : order.stage === "packed" ? "green" : "orange"}`}
-                style={{ minWidth: "80px", justifyContent: "center" }}
+                className={`text-[10px] font-semibold px-2 py-[3px] rounded-full min-w-[72px] text-center ${
+                  order.stage === "picked"
+                    ? "bg-[#F5F5F5] text-[#888]"
+                    : order.stage === "packed"
+                      ? "bg-[#E8F8F0] text-success"
+                      : "bg-[#FEF3E8] text-warning"
+                }`}
               >
-                {stageLabels[order.stage]}
+                {STAGE_LABELS[order.stage]}
               </span>
 
-              {/* ETA */}
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#888",
-                  minWidth: "70px",
-                  textAlign: "right",
-                }}
-              >
-                {order.eta}
+              {/* ETA + partner */}
+              <div className="text-right min-w-[80px]">
+                <p className="text-[11px] text-text-muted">{order.eta}</p>
+                {order.partnerEta && (
+                  <p className="text-[10px] text-warning font-semibold flex items-center gap-1 justify-end">
+                    <Bike size={9} /> {order.partnerEta}
+                  </p>
+                )}
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Per-Brand P&L */}
-      <div className="card">
-        <div className="card-header">
-          <div style={{ fontWeight: 600, fontSize: "14px" }}>
+              {/* Advance button */}
+              {!isDone && (
+                <button
+                  onClick={() => advance(order.id)}
+                  className="btn-primary text-[10px] py-[4px] px-3 flex-shrink-0"
+                >
+                  Next →
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Brand P&L table ───
+function BrandPL() {
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto bg-white rounded-xl border border-[#EEEEEE]">
+        <div className="px-5 py-3 border-b border-[#F5F5F5]">
+          <p className="text-[14px] font-semibold text-text-primary">
             Brand Performance — March 2026
-          </div>
+          </p>
+          <p className="text-[11px] text-text-muted mt-[1px]">
+            True profit per brand after food cost + commission + packaging
+          </p>
         </div>
-        <table className="data-table">
+        <table className="data-table w-full">
           <thead>
             <tr>
               <th>Brand</th>
@@ -347,38 +303,209 @@ export default function CloudKitchen() {
               <th>Food Cost %</th>
               <th>Net Revenue</th>
               <th>Margin</th>
+              <th>Rating</th>
             </tr>
           </thead>
           <tbody>
             {CLOUD_KITCHEN_BRANDS.map((brand) => (
-              <tr key={brand.id}>
-                <td style={{ fontWeight: 600 }}>{brand.name}</td>
-                <td>{brand.orders}</td>
-                <td>₹{(brand.revenue / 1000).toFixed(1)}k</td>
-                <td style={{ color: "#E74C3C" }}>
-                  ₹{(brand.commission / 1000).toFixed(1)}k
+              <tr key={brand.id} className="hover:bg-[#FAFAFA]">
+                <td>
+                  <span
+                    className={`text-[11px] font-bold px-2 py-[3px] rounded-full ${BRAND_COLORS[brand.name] || "bg-surface text-text-muted"}`}
+                  >
+                    {brand.name}
+                  </span>
+                </td>
+                <td className="font-semibold">{brand.orders}</td>
+                <td className="font-semibold">
+                  ₹{(brand.revenue / 1000).toFixed(1)}k
+                </td>
+                <td className="text-danger font-semibold">
+                  -₹{(brand.commission / 1000).toFixed(1)}k
                 </td>
                 <td>
                   <span
-                    className={`status-pill ${brand.foodCost < 30 ? "green" : brand.foodCost < 35 ? "orange" : "red"}`}
+                    className={`text-[10px] font-semibold px-2 py-[3px] rounded-full ${brand.foodCost < 30 ? "bg-[#E8F8F0] text-success" : brand.foodCost < 35 ? "bg-[#FEF3E8] text-warning" : "bg-[#FDECEA] text-danger"}`}
                   >
                     {brand.foodCost}%
                   </span>
                 </td>
-                <td style={{ fontWeight: 600 }}>
+                <td className="font-bold text-primary">
                   ₹{(brand.netRevenue / 1000).toFixed(1)}k
                 </td>
                 <td>
                   <span
-                    className={`status-pill ${brand.margin > 65 ? "green" : brand.margin > 55 ? "orange" : "red"}`}
+                    className={`text-[10px] font-semibold px-2 py-[3px] rounded-full ${brand.margin > 65 ? "bg-[#E8F8F0] text-success" : brand.margin > 55 ? "bg-[#FEF3E8] text-warning" : "bg-[#FDECEA] text-danger"}`}
                   >
                     {brand.margin}%
                   </span>
                 </td>
+                <td>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[#F9A825]">⭐</span>
+                    <span className="text-[12px] font-semibold">
+                      {brand.rating}
+                    </span>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
+          {/* Totals row */}
+          <tfoot>
+            <tr className="border-t-2 border-[#E0E0E0] bg-[#FAFAFA]">
+              <td className="font-bold text-text-primary">Total</td>
+              <td className="font-bold">
+                {CLOUD_KITCHEN_BRANDS.reduce((s, b) => s + b.orders, 0)}
+              </td>
+              <td className="font-bold">
+                ₹
+                {(
+                  CLOUD_KITCHEN_BRANDS.reduce((s, b) => s + b.revenue, 0) / 1000
+                ).toFixed(0)}
+                k
+              </td>
+              <td className="font-bold text-danger">
+                -₹
+                {(
+                  CLOUD_KITCHEN_BRANDS.reduce((s, b) => s + b.commission, 0) /
+                  1000
+                ).toFixed(0)}
+                k
+              </td>
+              <td />
+              <td className="font-bold text-primary text-[15px]">
+                ₹
+                {(
+                  CLOUD_KITCHEN_BRANDS.reduce((s, b) => s + b.netRevenue, 0) /
+                  1000
+                ).toFixed(0)}
+                k
+              </td>
+              <td />
+              <td />
+            </tr>
+          </tfoot>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main CloudKitchen page ───
+const TABS = [
+  { id: "brands", label: "Brand Overview" },
+  { id: "queue", label: "Live Order Queue" },
+  { id: "pl", label: "Brand P&L" },
+];
+
+export default function CloudKitchen() {
+  const [activeTab, setActiveTab] = useState("brands");
+  const [busyBrands, setBusyBrands] = useState({});
+
+  const toggleBusy = (id) =>
+    setBusyBrands((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const totalRevenue = CLOUD_KITCHEN_BRANDS.reduce(
+    (s, b) => s + b.netRevenue,
+    0,
+  );
+  const totalOrders = CLOUD_KITCHEN_BRANDS.reduce((s, b) => s + b.orders, 0);
+
+  return (
+    <div className="fade-in flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+            <Store size={22} color="white" />
+          </div>
+          <div>
+            <h1 className="text-[20px] font-semibold text-text-primary">
+              Cloud Kitchen Mode
+            </h1>
+            <p className="text-[13px] text-text-muted mt-[1px]">
+              {CLOUD_KITCHEN_BRANDS.length} brands · All platforms unified
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="status-pill green">All Brands Online</span>
+          <button className="btn-ghost text-xs py-[5px] px-3">
+            <RefreshCw size={12} />
+          </button>
+        </div>
+      </div>
+
+      {/* Chain stats */}
+      <div className="grid grid-cols-4 gap-3 mb-4 flex-shrink-0">
+        {[
+          {
+            label: "Total Net Revenue",
+            value: `₹${(totalRevenue / 1000).toFixed(0)}k`,
+            color: "text-primary",
+          },
+          {
+            label: "Total Orders",
+            value: totalOrders,
+            color: "text-text-primary",
+          },
+          {
+            label: "Active Brands",
+            value: CLOUD_KITCHEN_BRANDS.length,
+            color: "text-success",
+          },
+          {
+            label: "Live Orders",
+            value: LIVE_ORDERS.filter((o) => o.stage !== "picked").length,
+            color: "text-warning",
+          },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className="bg-white rounded-xl border border-[#EEEEEE] px-4 py-3"
+          >
+            <p className="text-[10px] text-text-muted uppercase tracking-wide font-semibold">
+              {s.label}
+            </p>
+            <p className={`text-[22px] font-bold leading-tight ${s.color}`}>
+              {s.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-[5px] mb-4 flex-shrink-0">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`px-4 py-[7px] rounded-lg text-xs font-semibold border transition-all ${activeTab === t.id ? "bg-primary text-white border-primary" : "bg-white text-text-secondary border-[#E0E0E0] hover:bg-surface"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === "brands" && (
+          <div className="overflow-y-auto h-full">
+            <div className="grid grid-cols-4 gap-3">
+              {CLOUD_KITCHEN_BRANDS.map((brand) => (
+                <BrandCard
+                  key={brand.id}
+                  brand={brand}
+                  busyMode={!!busyBrands[brand.id]}
+                  onToggleBusy={toggleBusy}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {activeTab === "queue" && <LiveOrderQueue />}
+        {activeTab === "pl" && <BrandPL />}
       </div>
     </div>
   );
