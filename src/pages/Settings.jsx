@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Store,
   MapPin,
@@ -12,15 +13,23 @@ import {
   FileText,
   CheckCircle,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Save,
   Palette,
+  ArrowRight,
+  X,
+  Check,
+  Zap,
 } from "lucide-react";
 import { RESTAURANT } from "../data/mockData";
 import { useTheme, THEMES } from "../context/ThemeContext";
+import Pricing from "./Pricing";
 
 // ─── Section nav items ───
 const SECTIONS = [
   { id: "theme", label: "Appearance & Theme", icon: Palette },
+  { id: "pricing", label: "Pricing & Plans", icon: Package },
   { id: "profile", label: "Restaurant Profile", icon: Store },
   { id: "tax", label: "Tax & Billing", icon: Receipt },
   { id: "printers", label: "Printers & Devices", icon: Printer },
@@ -592,8 +601,28 @@ function PrivacySection() {
 
 // ─── Section: Subscription ───
 function SubscriptionSection() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-4">
+      {/* View all plans banner */}
+      <div className="flex items-center justify-between bg-[#FFF5F5] border border-primary/20 rounded-xl px-4 py-3">
+        <div>
+          <p className="text-[13px] font-semibold text-primary">
+            Compare all plans & pricing
+          </p>
+          <p className="text-[11px] text-text-muted mt-[1px]">
+            See full feature comparison, add-ons, and ROI calculator
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/pricing")}
+          className="btn-primary text-xs py-[7px] px-4 flex-shrink-0"
+        >
+          View Pricing →
+        </button>
+      </div>
+
       {/* Current plan */}
       <div
         className="rounded-xl p-5 text-white"
@@ -857,9 +886,100 @@ function ThemeSection() {
   );
 }
 
+// ─── Pricing Section (embedded inside Settings) ───
+const PLANS_DATA = [
+  {
+    id: "starter",
+    name: "Starter",
+    price: 0,
+    priceNote: "Free forever",
+    color: "text-[#555]",
+    border: "border-[#E0E0E0]",
+    bg: "bg-white",
+    popular: false,
+    cta: "Current: Free",
+    features: [
+      "Unlimited billing & KOT",
+      "Zomato + Swiggy orders",
+      "Basic WhatsApp briefing",
+      "1 cloud kitchen brand",
+    ],
+  },
+  {
+    id: "smart",
+    name: "Smart",
+    price: 1499,
+    priceNote: "/month",
+    color: "text-info",
+    border: "border-info",
+    bg: "bg-[#EBF5FB]",
+    popular: false,
+    cta: "Upgrade to Smart",
+    features: [
+      "Everything in Starter",
+      "AI WhatsApp briefing",
+      "Aggregator reconciliation",
+      "Recipe costing",
+      "Full CRM + loyalty",
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: 2499,
+    priceNote: "/month",
+    color: "text-white",
+    border: "border-primary",
+    bg: "bg-primary",
+    popular: true,
+    cta: "Current Plan ✅",
+    features: [
+      "Everything in Smart",
+      "5 cloud kitchen brands",
+      "ONDC + WhatsApp ordering",
+      "WhatsApp campaigns",
+      "Menu engineering AI + fraud detection",
+    ],
+  },
+  {
+    id: "chain",
+    name: "Chain",
+    price: 1999,
+    priceNote: "/outlet/month",
+    color: "text-text-primary",
+    border: "border-[#1A1A1A]",
+    bg: "bg-white",
+    popular: false,
+    cta: "Talk to Sales",
+    features: [
+      "Everything in Pro",
+      "Central dashboard",
+      "Named account manager",
+      "30-min SLA (contractual)",
+      "Franchise management",
+    ],
+  },
+];
+
+const ADDONS_DATA = [
+  { name: "Extra Cloud Kitchen Brand", price: "₹799/brand/mo", icon: "🏭" },
+  { name: "ONDC Integration", price: "₹399/month", icon: "🌐" },
+  { name: "WhatsApp Ordering Channel", price: "₹599/month", icon: "💬" },
+  { name: "CA / Accountant Dashboard", price: "₹299/month", icon: "📊" },
+];
+
+function PricingSection() {
+  return (
+    <div className="overflow-y-auto">
+      <Pricing />
+    </div>
+  );
+}
+
 // ─── Main Settings page ───
 const SECTION_CONTENT = {
   theme: ThemeSection,
+  pricing: PricingSection,
   profile: ProfileSection,
   tax: TaxSection,
   printers: PrintersSection,

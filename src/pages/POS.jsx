@@ -4,8 +4,8 @@ import { LayoutGrid, Truck, ShoppingBag, RefreshCw } from "lucide-react";
 // ─── Tab definitions — path drives everything ───
 const TABS = [
   { label: "Dine-in", icon: LayoutGrid, path: "/pos" },
-  { label: "Delivery", icon: Truck, path: "/pos/delivery" },
   { label: "Takeaway", icon: ShoppingBag, path: "/pos/quick" },
+  { label: "Delivery", icon: Truck, path: "/pos/delivery" },  
 ];
 
 function tabTitle(pathname) {

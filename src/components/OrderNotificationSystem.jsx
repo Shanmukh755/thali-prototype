@@ -121,29 +121,92 @@ const REJECT_REASONS = [
   "Other",
 ];
 
-// ─── Web Audio beep ───
-function playBeep() {
+// ─── Alarm clock / school bell — two tones alternating rapidly ───
+let bellInterval = null;
+let alarmCtx = null;
+let alarmOsc1 = null;
+let alarmOsc2 = null;
+let alarmGain1 = null;
+let alarmGain2 = null;
+let alarmStopTimer = null;
+let alarmToggle = false;
+
+function startBell() {
+  stopBell();
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const beep = (freq, start, dur) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      gain.gain.setValueAtTime(0.3, ctx.currentTime + start);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + start + dur,
+    alarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = alarmCtx.createGain();
+    master.gain.value = 0.85;
+    master.connect(alarmCtx.destination);
+
+    alarmOsc1 = alarmCtx.createOscillator();
+    alarmOsc2 = alarmCtx.createOscillator();
+    alarmGain1 = alarmCtx.createGain();
+    alarmGain2 = alarmCtx.createGain();
+
+    alarmOsc1.type = "square";
+    alarmOsc1.frequency.value = 1000;
+    alarmOsc2.type = "square";
+    alarmOsc2.frequency.value = 800;
+
+    alarmOsc1.connect(alarmGain1);
+    alarmOsc2.connect(alarmGain2);
+    alarmGain1.connect(master);
+    alarmGain2.connect(master);
+
+    alarmGain1.gain.value = 0.8;
+    alarmGain2.gain.value = 0;
+
+    alarmOsc1.start();
+    alarmOsc2.start();
+
+    alarmToggle = true;
+    bellInterval = setInterval(() => {
+      if (!alarmCtx || !alarmGain1 || !alarmGain2) return;
+      alarmToggle = !alarmToggle;
+      alarmGain1.gain.setValueAtTime(
+        alarmToggle ? 0.8 : 0,
+        alarmCtx.currentTime,
       );
-      osc.start(ctx.currentTime + start);
-      osc.stop(ctx.currentTime + start + dur + 0.05);
-    };
-    beep(880, 0, 0.12);
-    beep(880, 0.18, 0.12);
-    beep(1100, 0.36, 0.18);
-  } catch {}
+      alarmGain2.gain.setValueAtTime(
+        alarmToggle ? 0 : 0.8,
+        alarmCtx.currentTime,
+      );
+    }, 80); // 80ms per tone = ~6 cycles/sec — alarm clock speed
+
+    alarmStopTimer = setTimeout(stopBell, 10000);
+  } catch (e) {}
+}
+
+function stopBell() {
+  if (bellInterval) {
+    clearInterval(bellInterval);
+    bellInterval = null;
+  }
+  if (alarmStopTimer) {
+    clearTimeout(alarmStopTimer);
+    alarmStopTimer = null;
+  }
+  try {
+    if (alarmOsc1) {
+      alarmOsc1.stop();
+      alarmOsc1 = null;
+    }
+    if (alarmOsc2) {
+      alarmOsc2.stop();
+      alarmOsc2 = null;
+    }
+    if (alarmCtx) {
+      alarmCtx.close();
+      alarmCtx = null;
+    }
+  } catch (e) {}
+  alarmGain1 = null;
+  alarmGain2 = null;
+}
+
+function playBeep() {
+  startBell();
 }
 
 // ─── Single notification card ───
@@ -169,6 +232,7 @@ function OrderCard({ order, onAccept, onReject, onDismiss }) {
   const DISMISS_THRESHOLD = 80;
 
   const triggerDismiss = () => {
+    stopBell();
     setDismissing(true);
     setSwipeX(-420);
     setTimeout(() => onDismiss(order.orderId), 300);
@@ -234,6 +298,7 @@ function OrderCard({ order, onAccept, onReject, onDismiss }) {
 
   const handleAccept = useCallback(() => {
     clearInterval(intervalRef.current);
+    stopBell();
     setAccepted(true);
     setTimeout(() => onAccept(order.orderId), 600);
   }, [order.orderId, onAccept]);
@@ -241,6 +306,7 @@ function OrderCard({ order, onAccept, onReject, onDismiss }) {
   const handleReject = () => {
     if (!rejectReason) return;
     clearInterval(intervalRef.current);
+    stopBell();
     setRejected(true);
     setTimeout(() => onReject(order.orderId), 600);
   };
